@@ -35,9 +35,19 @@ class TestFleetInspection(TransactionCase):
         items = self.env["fleet.inspection.item"].search([])
         self.assertEqual(inspection.line_ids.mapped("item_id"), items)
 
-    def test_name_get_includes_plate(self):
+    def test_batch_create_loads_checklist_and_sequences(self):
+        inspections = self.env["fleet.inspection"].create([
+            {"vehicle_id": self.vehicle.id, "vehicle_type": "car"},
+            {"vehicle_id": self.vehicle.id, "vehicle_type": "truck"},
+        ])
+        items = self.env["fleet.inspection.item"].search([])
+        self.assertEqual(len(inspections), 2)
+        self.assertTrue(all(inspection.name.startswith("INS/") for inspection in inspections))
+        self.assertTrue(all(inspection.line_ids.mapped("item_id") == items for inspection in inspections))
+
+    def test_display_name_includes_plate(self):
         inspection = self._new_inspection()
-        self.assertIn("AB123CD", inspection.name_get()[0][1])
+        self.assertIn("AB123CD", inspection.display_name)
 
     def test_full_flow_approved(self):
         inspection = self._new_inspection()
