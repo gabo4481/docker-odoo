@@ -18,16 +18,21 @@ vehículo de selección a catálogo corresponde al Tramo B.
    "prueba-tecnica": {
      "odoo_version": "17.0",
      "external_port": 8073,
-     "database": "v17",
+     "database": "v17-fleet-test",
      "odoo_config": "17.0_full",
      "overwrite_odoo_config": {
        "addons": ["src/custom/prueba-tecnica"],
+       "db_filter": "^prueba-tecnica",
+       "max_cron_threads": 0,
        "dev_mode": true
      }
    }
    ```
 
-   La configuración local de este repositorio ya incluye `17.0_full` y `v17`.
+   Define `v17-fleet-test` en `databases` como un servicio PostgreSQL 16 dedicado,
+   con un puerto libre y `expose_host_port: false`. No reutilices `v17` mientras
+   `client-b` lo use, salvo que configures aislamiento de PostgreSQL para ambas
+   instancias. `17.0_full` ya está definido en la configuración del repositorio.
    No necesitas Odoo Enterprise.
 
 2. Construye y levanta: `./odoo build` y `./odoo start`.
