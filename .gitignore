@@ -9,12 +9,13 @@ src/custom/*
 !src/custom/readme.md
 # Prueba técnica: módulos de partida y entregas del candidato
 !src/custom/prueba-tecnica/
-!src/custom/prueba-tecnica-odoo16/
 !mcp-server/src
 !src/
 src/*
 !src/custom/
 src/custom/*
+!src/custom/prueba-tecnica/
+!src/custom/prueba-tecnica/**
 !src/custom/client-b/
 !src/custom/client-b/**
 logs/
