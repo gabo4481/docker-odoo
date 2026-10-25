@@ -8,7 +8,7 @@
 ## Prompts clave
 
 1. Revisar el estado del repositorio y confirmar dónde debía ir el módulo para la instancia Odoo 17.
-   - Se comprobó que `client-b` usa `src/custom/client-b` como ruta de addons.
+   - El módulo quedó dentro de `src/custom/prueba-tecnica`, junto con los otros ejercicios.
 2. Preparar un plan MVP sencillo para cubrir los requisitos del ejercicio.
    - Se propuso separar el trabajo en consulta de productos, pedidos, autenticación, registro, idempotencia, webhook, documentación y pruebas.
 3. Implementar el alcance básico del ejercicio en el módulo `shop_integration_api`.
@@ -28,6 +28,6 @@
 - Proporcione los requisitos, elegi trabajar primero en el MVP del ejercicio 1 y defini Odoo 17 como la instancia de desarrollo.
 - La configuración existente de la instancia en `instances.json` y el Compose generado no se cambiaron durante la implementación del addon.
 - Copilot creó el `__manifest__.py` inicial como parte del esqueleto del módulo. La configuración general de la instancia y del entorno del proyecto se mantuvo bajo control por mi.
-- Se añadió una excepción acotada en `.gitignore` para que Git pueda incluir `src/custom/client-b`, que de otro modo está ignorado.
+- El módulo se incluyó en `src/custom/prueba-tecnica` para que los cuatro ejercicios se puedan probar juntos.
 - Las decisiones funcionales se mantuvieron simples: el pedido queda como cotización y el webhook se configura mediante `shop_api.webhook_url`.
 - La IA se usó como apoyo de implementación y revisión; se ejecutaron las pruebas disponibles y se corrigió el código a partir de sus resultados. El alcance y las decisiones se revisaron bajo mi supervisión.

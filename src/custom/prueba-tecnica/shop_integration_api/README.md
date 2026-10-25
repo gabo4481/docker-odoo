@@ -1,12 +1,12 @@
-# Shop API (Odoo 17)
+# Shop Integration API (Odoo 17)
 
 Addon básico para la integración de la tienda con Odoo.
 
 ## Instalar y configurar
 
-`client-b` ya incluye `src/custom/client-b` en su `addons_path`. Actualiza la
-lista de aplicaciones e instala **Shop Integration API** en Odoo. El usuario
-de integración necesita permisos de ventas para crear cotizaciones.
+La instancia `prueba-tecnica` ya incluye este módulo en su ruta de addons.
+Actualiza la lista de aplicaciones e instala **Shop Integration API** en Odoo.
+El usuario de integración necesita permisos de ventas para crear cotizaciones.
 
 Genera una API key global en las preferencias del usuario de Odoo. Odoo solo la
 muestra al crearla; úsala en `Authorization: Bearer <API_KEY>`. La API key se
@@ -21,14 +21,13 @@ Si no se configura esa URL, no se encolan ni se envían webhooks.
 
 ## Endpoints
 
-La especificación completa está en
-[`openapi.yaml`](./shop_integration_api/openapi.yaml).
+La especificación completa está en [`openapi.yaml`](./openapi.yaml).
 
 ### Consultar productos
 
 ```bash
 curl -H "Authorization: Bearer <API_KEY>" \
-  "http://localhost:8071/api/v1/products?category_id=1&only_with_stock=true&page=1&limit=50"
+  "http://localhost:8073/api/v1/products?category_id=1&only_with_stock=true&page=1&limit=50"
 ```
 
 Filtros opcionales: `category_id`, `only_with_stock` (`true`/`false`) y
@@ -38,7 +37,7 @@ Filtros opcionales: `category_id`, `only_with_stock` (`true`/`false`) y
 ### Crear una cotización
 
 ```bash
-curl -X POST "http://localhost:8071/api/v1/orders" \
+curl -X POST "http://localhost:8073/api/v1/orders" \
   -H "Authorization: Bearer <API_KEY>" \
   -H "Idempotency-Key: shop-order-100" \
   -H "Content-Type: application/json" \
@@ -65,23 +64,8 @@ la espera crece de 5 a 60 minutos. El evento tiene `event`,
 ## Pruebas
 
 Desde la raíz del repositorio, ejecuta
-`./odoo test client-b shop_integration_api`.
+`./odoo test prueba-tecnica shop_integration_api`.
 
 El nombre técnico cambió de `shop_api` a `shop_integration_api`. Para esta
 versión, usa una base nueva; una base donde estuviera instalado el nombre
 anterior requiere una migración aparte.
-
-## Solicitudes de pago
-
-Las solicitudes enviadas se asignan al nivel de aprobación que corresponde a
-su compañía, moneda y monto. Tesorería registra el pago desde un diario de
-banco o caja; si la moneda del diario difiere, el monto se convierte usando la
-tasa de Odoo para la fecha del pago. Las decisiones de multi-compañía,
-concurrencia y moneda están en
-[`payment_request/ARCHITECTURE.md`](./payment_request/ARCHITECTURE.md).
-
-Para ejecutar las pruebas del módulo, desde la raíz del repositorio:
-
-```bash
-./odoo test client-b payment_request
-```
