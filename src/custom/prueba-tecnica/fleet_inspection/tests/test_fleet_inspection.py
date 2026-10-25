@@ -2,6 +2,10 @@ from datetime import timedelta
 
 from odoo import fields
 from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.addons.fleet_inspection.fleet_inspection_migration import (
+    migrate_vehicle_types,
+    prepare_vehicle_type_column,
+)
 from odoo.tests.common import Form, TransactionCase, tagged
 
 
@@ -25,7 +29,11 @@ class TestFleetInspection(TransactionCase):
         })
 
     def _new_inspection(self, **vals):
-        values = {"vehicle_id": self.vehicle.id, "vehicle_type": "truck", "inspector_id": self.inspector.id}
+        values = {
+            "vehicle_id": self.vehicle.id,
+            "vehicle_type": self.env.ref("fleet_inspection.vehicle_type_truck").id,
+            "inspector_id": self.inspector.id,
+        }
         values.update(vals)
         return self.env["fleet.inspection"].create(values)
 
@@ -37,8 +45,14 @@ class TestFleetInspection(TransactionCase):
 
     def test_batch_create_loads_checklist_and_sequences(self):
         inspections = self.env["fleet.inspection"].create([
-            {"vehicle_id": self.vehicle.id, "vehicle_type": "car"},
-            {"vehicle_id": self.vehicle.id, "vehicle_type": "truck"},
+            {
+                "vehicle_id": self.vehicle.id,
+                "vehicle_type": self.env.ref("fleet_inspection.vehicle_type_car").id,
+            },
+            {
+                "vehicle_id": self.vehicle.id,
+                "vehicle_type": self.env.ref("fleet_inspection.vehicle_type_truck").id,
+            },
         ])
         items = self.env["fleet.inspection.item"].search([])
         self.assertEqual(len(inspections), 2)
@@ -92,7 +106,67 @@ class TestFleetInspection(TransactionCase):
         form.vehicle_id = self.vehicle
         inspection = form.save()
         self.assertEqual(inspection.inspector_id, self.inspector)
-        self.assertEqual(inspection.vehicle_type, "car")
+        self.assertEqual(inspection.vehicle_type, self.env.ref("fleet_inspection.vehicle_type_car"))
+
+    def test_vehicle_type_migration_is_batched_and_idempotent(self):
+        codes = ["motorcycle", "car", "truck", "other"]
+        inspections = self.env["fleet.inspection"].create([
+            {
+                "vehicle_id": self.vehicle.id,
+                "vehicle_type": self.env.ref(
+                    "fleet_inspection.vehicle_type_%s" % code
+                ).id,
+            }
+            for code in codes
+        ])
+
+        self.env.cr.execute(
+            "ALTER TABLE fleet_inspection "
+            "DROP CONSTRAINT fleet_inspection_vehicle_type_fkey"
+        )
+        self.env.cr.execute(
+            "ALTER TABLE fleet_inspection "
+            "ALTER COLUMN vehicle_type TYPE varchar USING vehicle_type::varchar"
+        )
+        for inspection, code in zip(inspections, codes):
+            self.env.cr.execute(
+                "UPDATE fleet_inspection SET vehicle_type = %s WHERE id = %s",
+                [code, inspection.id],
+            )
+        prepare_vehicle_type_column(self.env.cr)
+        self.env.cr.execute(
+            "ALTER TABLE fleet_inspection ADD COLUMN vehicle_type integer"
+        )
+        self.env.cr.execute(
+            "UPDATE fleet_inspection SET vehicle_type = NULL WHERE id = ANY(%s)",
+            [inspections.ids],
+        )
+
+        self.assertEqual(migrate_vehicle_types(self.env.cr, batch_size=2), 4)
+        self.assertEqual(migrate_vehicle_types(self.env.cr, batch_size=2), 0)
+        self.env.cr.execute(
+            """
+            ALTER TABLE fleet_inspection
+            ADD CONSTRAINT fleet_inspection_vehicle_type_fkey
+            FOREIGN KEY (vehicle_type)
+            REFERENCES fleet_inspection_vehicle_type (id)
+            ON DELETE RESTRICT
+            """
+        )
+        self.env.invalidate_all()
+        self.assertEqual(inspections.mapped("vehicle_type.code"), codes)
+        self.env.cr.execute(
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name = 'fleet_inspection'
+                  AND column_name = 'vehicle_type_legacy'
+            )
+            """
+        )
+        self.assertFalse(self.env.cr.fetchone()[0])
 
     def test_cron_marks_overdue_once(self):
         inspection = self._new_inspection(date=fields.Date.today() - timedelta(days=10))
