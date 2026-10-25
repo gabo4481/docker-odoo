@@ -1,0 +1,10 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_payment_request_requester,payment.request requester,model_payment_request,payment_request.group_payment_request_requester,1,1,1,0
+access_payment_request_approver,payment.request approver,model_payment_request,payment_request.group_payment_request_approver,1,1,0,0
+access_payment_request_treasury,payment.request treasury,model_payment_request,payment_request.group_payment_request_treasury,1,1,0,0
+access_payment_request_admin,payment.request admin,model_payment_request,base.group_system,1,1,1,1
+access_payment_approval_level_approver,payment.approval.level approver,model_payment_approval_level,payment_request.group_payment_request_approver,1,1,1,1
+access_payment_approval_level_treasury,payment.approval.level treasury,model_payment_approval_level,payment_request.group_payment_request_treasury,1,0,0,0
+access_payment_approval_level_admin,payment.approval.level admin,model_payment_approval_level,base.group_system,1,1,1,1
+access_payment_request_reject_wizard,payment.request.reject.wizard,model_payment_request_reject_wizard,payment_request.group_payment_request_approver,1,1,1,1
+access_payment_request_payment_wizard,payment.request.payment.wizard,model_payment_request_payment_wizard,payment_request.group_payment_request_treasury,1,1,1,1

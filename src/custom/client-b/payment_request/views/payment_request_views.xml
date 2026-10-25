@@ -1,0 +1,171 @@
+<?xml version ="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <!-- ========================================== -->
+    <!-- VISTAS PARA PAYMENT.REQUEST (Solicitudes) -->
+    <!-- ========================================== -->
+
+    <!-- Vista Tree (Lista) -->
+    <record id="view_payment_request_tree" model="ir.ui.view">
+        <field name="name">payment.request.tree</field>
+        <field name="model">payment.request</field>
+        <field name="arch" type="xml">
+            <tree string="Solicitudes de Pago">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="requester_id"/>
+                <field name="amount"/>
+                <field name="currency_id"/>
+                <field name="date"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-warning="state == 'sent'" decoration-success="state == 'approved'" decoration-primary="state == 'paid'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista Form (Formulario) -->
+    <record id="view_payment_request_form" model="ir.ui.view">
+        <field name="name">payment.request.form</field>
+        <field name="model">payment.request</field>
+        <field name="arch" type="xml">
+            <form string="Solicitud de Pago">
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,sent,approved,rejected,paid"/>
+                    <button name="action_submit"
+                            type="object"
+                            string="Enviar"
+                            groups="payment_request.group_payment_request_requester"
+                            invisible="state != 'draft'"/>
+
+                    <button name="action_approve"
+                            type="object"
+                            string="Aprobar"
+                            groups="payment_request.group_payment_request_approver"
+                            invisible="state != 'sent'"/>
+
+                    <button name="action_open_reject_wizard"
+                            type="object"
+                            string="Rechazar"
+                            groups="payment_request.group_payment_request_approver"
+                            invisible="state != 'sent'"/>
+
+                    <button name="action_open_payment_wizard"
+                            type="object"
+                            string="Registrar pago"
+                            groups="payment_request.group_payment_request_treasury"
+                            invisible="state != 'approved'"/>
+
+                    <button name="%(action_report_payment_request)d"
+                            type="action"
+                            string="Imprimir solicitud"
+                            groups="payment_request.group_payment_request_requester,payment_request.group_payment_request_approver,payment_request.group_payment_request_treasury"/>
+                </header>
+
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="requester_id" readonly="state != 'draft'"/>
+                            <field name="amount" readonly="state != 'draft'"/>
+                            <field name="currency_id" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="concept" readonly="state != 'draft'"/>
+                            <field name="approver_id" readonly="state != 'draft'"/>
+                            <field name="approved_by_id" readonly="state != 'draft'"/>
+                            <field name="rejection_reason" readonly="state != 'draft'"/>
+                            <field name="payment_id" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                </sheet>
+
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista Search (Búsqueda y filtros) -->
+    <record id="view_payment_request_search" model="ir.ui.view">
+        <field name="name">payment.request.search</field>
+        <field name="model">payment.request</field>
+        <field name="arch" type="xml">
+            <search string="Solicitudes de Pago">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="requester_id"/>
+                <field name="approver_id" invisible="1"/>
+                <field name="company_id" invisible="1"/>
+                <separator/>
+                <filter string="Borrador" name="filter_draft" domain="[('state','=','draft')]"/>
+                <filter string="Enviada" name="filter_sent" domain="[('state','=','sent')]"/>
+                <filter string="Aprobado" name="filter_approved" domain="[('state','=','approved')]"/>
+                <filter string="Pagado" name="filter_paid" domain="[('state','=','paid')]"/>
+                <filter string="Rechazado" name="filter_rejected" domain="[('state','=','rejected')]"/>
+                <separator/>
+                <filter string="Mis Solicitudes"
+                    name="filter_my_requests"
+                    domain="[('requester_id', '=', uid)]"/>
+
+                <filter string="Solicitudes para Aprobar"
+                        name="filter_requests_to_approve"
+                        domain="[('approver_id', '=', uid), ('state', '=', 'sent')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Estado" name="group_by_state" context="{'group_by':'state'}"/>
+                    <filter string="Proveedor" name="group_by_partner" context="{'group_by': 'partner_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ========================================== -->
+    <!-- ACCIONES DE VENTANA (Window Actions)     -->
+    <!-- ========================================== -->
+
+
+    <record id="action_payment_request" model="ir.actions.act_window">
+        <field name="name">Solicitudes de Pago</field>
+        <field name="res_model">payment.request</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_payment_request_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crea tu primera solicitud de pago aquí
+            </p>
+        </field>
+    </record>
+
+    <!-- ========================================== -->
+    <!-- MENÚS Y JERARQUÍA                          -->
+    <!-- ========================================== -->
+
+    <!-- Menú Raíz -->
+    <menuitem id="menu_payment_root"
+              name="Gestión de Pagos"
+              groups="payment_request.group_payment_request_requester,payment_request.group_payment_request_approver,payment_request.group_payment_request_treasury,base.group_system"
+              sequence="10"/>
+
+    <!-- Submenú de Solicitudes (Restringido al grupo solicitante) -->
+    <menuitem id="menu_payment_request"
+              name="Solicitudes"
+              parent="menu_payment_root"
+              action="action_payment_request"
+              groups="payment_request.group_payment_request_requester,payment_request.group_payment_request_approver,payment_request.group_payment_request_treasury,base.group_system"
+              sequence="10"/>
+
+    <!-- Submenú de Configuración -->
+    <menuitem id="menu_payment_config"
+              name="Configuración"
+              parent="menu_payment_root"
+              groups="payment_request.group_payment_request_approver,base.group_system"
+              sequence="50"/>
+</odoo>

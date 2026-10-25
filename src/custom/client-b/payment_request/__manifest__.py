@@ -1,0 +1,21 @@
+{
+    "name": "Payment Request",
+    "version": "17.0.1.0.0",
+    "category": "Sales",
+    "summary": "Payment Request module for Odoo 17",
+    "depends": ["account", "mail", "base", "sale_management"],
+    "data": [
+        "security/groups.xml",
+        "data/payment_request_sequence.xml",
+        "security/ir.model.access.csv",
+        "security/record_rules.xml",
+        "reports/payment_request_report.xml",
+        "views/payment_request_views.xml",
+        "views/payment_approval_level_views.xml",
+        "wizard/payment_request_reject_views.xml",
+        "wizard/payment_request_payment_views.xml",
+    ],
+    "installable": True,
+    "application": True,
+    "license": "LGPL-3",
+}

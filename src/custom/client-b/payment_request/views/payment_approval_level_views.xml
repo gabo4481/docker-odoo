@@ -1,0 +1,60 @@
+<?xml version ="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <!-- ========================================== -->
+    <!-- VISTAS PARA PAYMENT.APPROVAL.LEVEL (Niveles) -->
+    <!-- ========================================== -->
+
+    <!-- Vista Tree para Niveles -->
+    <record id="view_payment_approval_level_tree" model="ir.ui.view">
+        <field name="name">payment.approval.level.tree</field>
+        <field name="model">payment.approval.level</field>
+        <field name="arch" type="xml">
+            <tree string="Niveles de Aprobación">
+                <field name="name"/>
+                <field name="min_amount"/>
+                <field name="currency_id"/>
+                <field name="company_id"/>
+                <field name="approver_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista Form para Niveles -->
+    <record id="view_payment_approval_level_form" model="ir.ui.view">
+        <field name="name">payment.approval.level.form</field>
+        <field name="model">payment.approval.level</field>
+        <field name="arch" type="xml">
+            <form string="Nivel de Aprobación">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="min_amount"/>
+                        <field name="currency_id"/>
+                        <field name="company_id"/>
+                        <field name="approver_id"/>
+
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ========================================== -->
+    <!-- ACCIONES DE VENTANA (Window Actions)     -->
+    <!-- ========================================== -->
+
+    <record id="action_payment_approval_level" model="ir.actions.act_window">
+        <field name="name">Niveles de Aprobación</field>
+        <field name="res_model">payment.approval.level</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_payment_approval_level"
+              name="Niveles de Aprobación"
+              parent="payment_request.menu_payment_config"
+              action="action_payment_approval_level"
+              groups="payment_request.group_payment_request_approver,base.group_system"
+              sequence="10"/>
+</odoo>

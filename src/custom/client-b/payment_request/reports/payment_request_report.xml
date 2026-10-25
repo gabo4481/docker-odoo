@@ -1,0 +1,60 @@
+<odoo>
+    <record id="action_report_payment_request" model="ir.actions.report">
+        <field name="name">Solicitud de pago</field>
+        <field name="model">payment.request</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">payment_request.report_payment_request</field>
+        <field name="report_file">payment_request.report_payment_request</field>
+        <field name="binding_model_id" ref="model_payment_request"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_payment_request">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="request">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>Solicitud de pago <span t-field="request.name"/></h2>
+                        <table class="table table-sm">
+                            <tr>
+                                <th>Proveedor</th>
+                                <td><span t-field="request.partner_id"/></td>
+                            </tr>
+                            <tr>
+                                <th>Solicitante</th>
+                                <td><span t-field="request.requester_id"/></td>
+                            </tr>
+                            <tr>
+                                <th>Monto</th>
+                                <td>
+                                    <span t-field="request.amount"
+                                          t-options="{'widget': 'monetary', 'display_currency': request.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Fecha</th>
+                                <td><span t-field="request.date"/></td>
+                            </tr>
+                            <tr>
+                                <th>Concepto</th>
+                                <td><span t-field="request.concept"/></td>
+                            </tr>
+                            <tr>
+                                <th>Estado</th>
+                                <td><span t-field="request.state"/></td>
+                            </tr>
+                            <tr>
+                                <th>Aprobado por</th>
+                                <td><span t-field="request.approved_by_id"/></td>
+                            </tr>
+                            <tr>
+                                <th>Aprobado el</th>
+                                <td><span t-field="request.approved_at"/></td>
+                            </tr>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
