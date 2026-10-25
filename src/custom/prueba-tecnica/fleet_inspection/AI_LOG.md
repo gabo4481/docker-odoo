@@ -1,7 +1,7 @@
 # AI_LOG — fleet_inspection
 
 ## Herramientas
-- Usé Copilot en VS Code como apoyo para revisar, corregir y probar el módulo.
+- Usé Copilot Gratis para revisar, corregir y probar el módulo.
 
 ## Prompts clave
 
