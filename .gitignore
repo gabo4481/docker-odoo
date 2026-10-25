@@ -5,6 +5,12 @@ coverage_data/
 pwa.json
 src
 !mcp-server/src
+!src/
+src/*
+!src/custom/
+src/custom/*
+!src/custom/client-b/
+!src/custom/client-b/**
 logs/
 .resources/Dockerfile
 .resources/Dockerfile.*

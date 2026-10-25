@@ -1,0 +1,11 @@
+<odoo>
+    <record id="ir_cron_shop_api_webhook" model="ir.cron">
+        <field name="name">Shop API: retry delivery webhooks</field>
+        <field name="model_id" ref="model_shop_api_webhook_job"/>
+        <field name="state">code</field>
+        <field name="code">model.process_pending()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">minutes</field>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

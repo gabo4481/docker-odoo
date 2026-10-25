@@ -1,0 +1,145 @@
+openapi: 3.0.3
+info:
+  title: Shop API
+  version: 1.0.0
+  description: API básica para consultar productos y crear cotizaciones en Odoo 17.
+servers:
+  - url: http://localhost:8071
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/products:
+    get:
+      summary: Consultar productos vendibles activos
+      parameters:
+        - name: category_id
+          in: query
+          schema:
+            type: integer
+        - name: only_with_stock
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: modified_since
+          in: query
+          description: Fecha ISO 8601, por ejemplo 2025-01-31T10:00:00Z.
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Productos y metadatos de paginación.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  products:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        default_code:
+                          type: string
+                        name:
+                          type: string
+                        price:
+                          type: number
+                        available_quantity:
+                          type: number
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  next:
+                    type: integer
+                    nullable: true
+        "401":
+          $ref: "#/components/responses/ApiError"
+        "422":
+          $ref: "#/components/responses/ApiError"
+  /api/v1/orders:
+    post:
+      summary: Crear una cotización de venta
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_rif, external_reference, lines]
+              properties:
+                customer_rif:
+                  type: string
+                external_reference:
+                  type: string
+                lines:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [default_code, quantity]
+                    properties:
+                      default_code:
+                        type: string
+                      quantity:
+                        type: number
+                        exclusiveMinimum: 0
+      responses:
+        "201":
+          description: Cotización creada.
+        "200":
+          description: Pedido existente devuelto para una repetición idempotente.
+        "401":
+          $ref: "#/components/responses/ApiError"
+        "409":
+          $ref: "#/components/responses/ApiError"
+        "422":
+          $ref: "#/components/responses/ApiError"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API key global de un usuario Odoo.
+  responses:
+    ApiError:
+      description: Error de autenticación o validación.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                required: [code, field, message]
+                properties:
+                  code:
+                    type: string
+                  field:
+                    type: string
+                    nullable: true
+                  message:
+                    type: string
