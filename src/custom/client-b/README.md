@@ -64,3 +64,18 @@ la espera crece de 5 a 60 minutos. El evento tiene `event`,
 ## Pruebas
 
 Desde la raíz del repositorio, ejecuta `./odoo test client-b shop_api`.
+
+## Solicitudes de pago
+
+Las solicitudes enviadas se asignan al nivel de aprobación que corresponde a
+su compañía, moneda y monto. Tesorería registra el pago desde un diario de
+banco o caja; si la moneda del diario difiere, el monto se convierte usando la
+tasa de Odoo para la fecha del pago. Las decisiones de multi-compañía,
+concurrencia y moneda están en
+[`payment_request/ARCHITECTURE.md`](./payment_request/ARCHITECTURE.md).
+
+Para ejecutar las pruebas del módulo, desde la raíz del repositorio:
+
+```bash
+./odoo test client-b payment_request
+```
