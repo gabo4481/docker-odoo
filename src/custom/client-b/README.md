@@ -5,8 +5,8 @@ Addon básico para la integración de la tienda con Odoo.
 ## Instalar y configurar
 
 `client-b` ya incluye `src/custom/client-b` en su `addons_path`. Actualiza la
-lista de aplicaciones e instala **Shop API** en Odoo. El usuario de integración
-necesita permisos de ventas para crear cotizaciones.
+lista de aplicaciones e instala **Shop Integration API** en Odoo. El usuario
+de integración necesita permisos de ventas para crear cotizaciones.
 
 Genera una API key global en las preferencias del usuario de Odoo. Odoo solo la
 muestra al crearla; úsala en `Authorization: Bearer <API_KEY>`. La API key se
@@ -21,7 +21,8 @@ Si no se configura esa URL, no se encolan ni se envían webhooks.
 
 ## Endpoints
 
-La especificación completa está en [`openapi.yaml`](./shop_api/openapi.yaml).
+La especificación completa está en
+[`openapi.yaml`](./shop_integration_api/openapi.yaml).
 
 ### Consultar productos
 
@@ -63,7 +64,12 @@ la espera crece de 5 a 60 minutos. El evento tiene `event`,
 
 ## Pruebas
 
-Desde la raíz del repositorio, ejecuta `./odoo test client-b shop_api`.
+Desde la raíz del repositorio, ejecuta
+`./odoo test client-b shop_integration_api`.
+
+El nombre técnico cambió de `shop_api` a `shop_integration_api`. Para esta
+versión, usa una base nueva; una base donde estuviera instalado el nombre
+anterior requiere una migración aparte.
 
 ## Solicitudes de pago
 

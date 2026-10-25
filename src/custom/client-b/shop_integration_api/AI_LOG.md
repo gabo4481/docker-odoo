@@ -1,4 +1,4 @@
-# AI_LOG — shop_api
+# AI_LOG — shop_integration_api
 
 ## Herramientas
 
@@ -11,7 +11,7 @@
    - Se comprobó que `client-b` usa `src/custom/client-b` como ruta de addons.
 2. Preparar un plan MVP sencillo para cubrir los requisitos del ejercicio.
    - Se propuso separar el trabajo en consulta de productos, pedidos, autenticación, registro, idempotencia, webhook, documentación y pruebas.
-3. Implementar el alcance básico del ejercicio en el módulo `shop_api`.
+3. Implementar el alcance básico del ejercicio en el módulo `shop_integration_api`.
    - Copilot ayudó a crear el esqueleto del addon, los endpoints, modelos, pruebas `HttpCase`, README y `openapi.yaml`. La implementación se revisó y se corrigió usando los resultados de las pruebas.
 4. Contrastar después la implementación con los criterios de aceptación.
    - La revisión identificó pruebas que todavía no demuestran algunos criterios de forma completa, en particular el conteo de consultas SQL y el encolado al validar una entrega real.

@@ -1,5 +1,5 @@
 {
-    "name": "Shop API",
+    "name": "Shop Integration API",
     "version": "17.0.1.0.0",
     "category": "Sales",
     "summary": "Simple product and sales order API for the online shop",

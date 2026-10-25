@@ -1,13 +1,15 @@
 # Prueba técnica — Desarrollador Odoo
 
 Esta carpeta es el directorio de addons de la prueba. Aquí van los módulos que
-entregues. `fleet_inspection` está migrado a Odoo 17; el cambio de tipo de
-vehículo de selección a catálogo corresponde al Tramo B.
+entregues. `fleet_inspection` está migrado a Odoo 17 y sus tipos de vehículo
+usan un catálogo con migración de los datos existentes.
 
 | Carpeta | Qué contiene |
 |---|---|
+| `src/custom/client-b/shop_integration_api` | **Ejercicio 1**: API de integración para consultar productos, crear cotizaciones y notificar entregas. |
 | `src/custom/prueba-tecnica/fleet_inspection` | **Ejercicio 2**: inspecciones de flota migradas a Odoo 17. El paso de `Selection` a catálogo queda para el Tramo B. |
 | `src/custom/prueba-tecnica/sale_commission` | **Ejercicio 3**: comisión del vendedor por línea y por categoría. Revisa su historial con `git log -- src/custom/prueba-tecnica/sale_commission`. |
+| `src/custom/client-b/payment_request` | **Ejercicio 4**: solicitudes de pago y flujo de aprobación. |
 
 ## Levantar el entorno
 
@@ -21,8 +23,8 @@ vehículo de selección a catálogo corresponde al Tramo B.
      "database": "v17-fleet-test",
      "odoo_config": "17.0_full",
      "overwrite_odoo_config": {
-       "addons": ["src/custom/prueba-tecnica"],
-       "db_filter": "^prueba-tecnica",
+       "addons": ["src/custom/prueba-tecnica", "src/custom/client-b"],
+       "db_filter": "^prueba",
        "max_cron_threads": 0,
        "dev_mode": true
      }
@@ -39,8 +41,11 @@ vehículo de selección a catálogo corresponde al Tramo B.
 3. Corre las pruebas de cada módulo, por ejemplo:
 
    ```bash
-   ./odoo test prueba-tecnica fleet_inspection
-   ./odoo test prueba-tecnica sale_commission
+   ./odoo test -d prueba_limpia \
+     -m shop_integration_api,fleet_inspection,sale_commission,payment_request
    ```
+
+   Si el CLI pregunta por la instancia, elige `prueba-tecnica`. La base nueva
+   ejecuta juntas las pruebas de los cuatro módulos en Odoo 17.
 
 Más detalles del CLI en el `readme.md` de la raíz del repositorio.

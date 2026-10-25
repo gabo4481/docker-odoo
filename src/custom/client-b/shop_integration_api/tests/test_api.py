@@ -31,7 +31,7 @@ class TestShopApi(HttpCase):
         cls.api_user = cls.env["res.users"].create(
             {
                 "name": "Shop API integration test",
-                "login": "shop_api_integration_test",
+                "login": "shop_integration_api_test",
                 "email": "shop-api-test@example.invalid",
                 "groups_id": [
                     (
@@ -241,7 +241,7 @@ class TestShopApi(HttpCase):
         )
 
         with patch(
-            "odoo.addons.shop_api.models.webhook.requests.post",
+            "odoo.addons.shop_integration_api.models.webhook.requests.post",
             side_effect=requests.Timeout("shop unavailable"),
         ):
             self.env["shop.api.webhook.job"].process_pending()
