@@ -1212,6 +1212,7 @@ def execute_test_run(container, label, closure, test_tags, db_name, args, module
         f"odoo --test-tags {test_tags} -d {db_name} {install_flag} {modules_str} "
         "--without-demo=True --stop-after-init --workers 0 --no-http "
         f"--http-port={http_port} --gevent-port={gevent_port} "
+        f"--db-filter='^{re.escape(db_name)}$' "
         "-c /home/odoo/.config/odoo.conf"
     )
     container_json_path = f"/tmp/coverage_{db_name}.json"
