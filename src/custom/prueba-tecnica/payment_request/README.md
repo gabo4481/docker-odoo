@@ -27,28 +27,47 @@ La prueba conjunta de los cuatro addons está documentada en
 
 ## Supuestos y preguntas al cliente
 
-Antes de desplegarlo, le preguntaría a Carolina:
+Leí el correo como una necesidad concreta: cualquier empleado debe poder
+solicitar un pago, la solicitud enviada queda fija, los pagos normales los
+aprueba el jefe del área y los grandes gerencia, Tesorería registra el pago,
+el rechazo explica el motivo y el pago puede ser en una moneda distinta de la
+solicitud. El correo no define montos, responsables ni varias reglas
+operativas; para completar el ejercicio tomé estas decisiones:
 
-- ¿Qué montos y monedas definen cada nivel, y quiénes serán los aprobadores
-  por área y compañía?
-- ¿Puede un empleado aprobar una solicitud de otra persona? ¿Se permite que
-  quien solicita pertenezca al grupo de aprobadores?
-- ¿Qué diarios puede usar Tesorería y se permiten pagos parciales o varios
-  pagos para una solicitud?
-- ¿Qué política se aplica a proveedores, conceptos y documentos de respaldo?
+### Lo que le preguntaría a Carolina
 
-Para avanzar sin respuesta, asumí que:
+- ¿Desde qué monto el pago deja de ser normal y debe aprobarlo gerencia?
+  ¿Hay más de dos niveles?
+- ¿Quiénes son los jefes de cada área y quiénes integran gerencia? ¿La
+  aprobación se determina por el área del solicitante, por el proveedor o
+  solo por el monto?
+- ¿Qué empleados deben recibir el grupo para solicitar pagos? ¿Un aprobador
+  puede aprobar una solicitud propia?
+- ¿Tesorería debe pagar el monto completo en una sola operación? ¿Qué diarios
+  puede usar?
+- ¿Qué tasa de cambio se debe aplicar a pagos en bolívares y quién mantiene
+  esa tasa en Odoo?
+- ¿Se deben adjuntar facturas u otros soportes a la solicitud?
 
-- Los niveles se configuran por compañía y moneda, y gana el nivel con el
-  monto mínimo más alto que no supere el monto solicitado.
-- El solicitante no puede aprobar ni rechazar su propia solicitud; solo el
-  aprobador asignado puede hacerlo.
-- Una solicitud genera un pago total desde un diario bancario o de caja; no
-  se permiten pagos parciales ni un segundo pago vinculado.
-- La solicitud conserva el monto y moneda originales. Si el diario usa otra
-  moneda, Odoo convierte el monto con la tasa de la fecha de pago.
-- Las solicitudes enviadas ya no se editan; para cambiar sus datos se debe
-  crear una nueva solicitud.
+### Lo que asumí para avanzar
+
+- Los empleados autorizados reciben el grupo **Solicitante**. Una vez enviada,
+  la solicitud no se edita; si hay que corregirla, se crea otra.
+- Configuro niveles por compañía y moneda con un monto mínimo y una persona
+  aprobadora. Se asigna el nivel con el monto mínimo más alto que no supere el
+  monto solicitado. El módulo no decide por área: esa relación debe acordarse
+  con Carolina y reflejarse en quién se configura como aprobador para cada
+  nivel.
+- No se puede aprobar ni rechazar la propia solicitud; solo la persona
+  asignada puede hacerlo. El rechazo requiere un motivo que queda en el
+  chatter.
+- Tesorería registra un solo pago total desde un diario bancario o de caja.
+  No incluí pagos parciales ni varios pagos para una solicitud.
+- La solicitud conserva el monto y la moneda solicitados. Al pagar desde un
+  diario en otra moneda, convierto el monto con la tasa registrada en Odoo
+  para la fecha del pago y la compañía de la solicitud.
+- No exigí adjuntos porque el correo no los pide; es una política que
+  confirmaría antes de poner el flujo en producción.
 
 ## Limitaciones conocidas
 
