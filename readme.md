@@ -5,6 +5,13 @@ Entorno de desarrollo que permite levantar **múltiples instancias de Odoo** (di
 Compatible con Odoo 14.0, 16.0, 17.0, 18.0, 19.0 y master.
 Compatible con Linux y macOS (AMD y ARM).
 
+## Versión elegida para la prueba técnica
+
+Para los cuatro ejercicios ubicados en [`src/custom/prueba-tecnica`](./src/custom/prueba-tecnica/README.md),
+elegí **Odoo 17** (`ODOO_VERSION=17`). En este repositorio, la instancia lo
+declara como `odoo_version: "17.0"`; el módulo `fleet_inspection` también
+declara Odoo 17 en su manifiesto.
+
 ## Instalación Rápida
 
 ```bash

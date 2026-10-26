@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: API básica para consultar productos y crear cotizaciones en Odoo 17.
 servers:
-  - url: http://localhost:8071
+  - url: http://localhost:8073
 security:
   - bearerAuth: []
 paths:
@@ -112,6 +112,8 @@ paths:
           description: Cotización creada.
         "200":
           description: Pedido existente devuelto para una repetición idempotente.
+        "400":
+          $ref: "#/components/responses/ApiError"
         "401":
           $ref: "#/components/responses/ApiError"
         "409":

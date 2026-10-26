@@ -1,6 +1,15 @@
 # Shop Integration API (Odoo 17)
 
-Addon básico para la integración de la tienda con Odoo.
+Addon para que una tienda consulte productos y cree cotizaciones en Odoo.
+
+## Tramos completados
+
+- **A:** `GET /api/v1/products` devuelve productos activos y vendibles, con
+  categoría, stock y fecha de modificación como filtros.
+- **B:** autentica con API keys nativas de Odoo, registra llamadas y crea
+  cotizaciones. Los errores indican un código y el campo que debe corregirse.
+- **C:** incluye paginación, idempotencia, consulta agrupada de stock y
+  notificaciones webhook de entrega con reintentos.
 
 ## Instalar y configurar
 
@@ -9,13 +18,13 @@ Actualiza la lista de aplicaciones e instala **Shop Integration API** en Odoo.
 El usuario de integración necesita permisos de ventas para crear cotizaciones.
 
 Genera una API key global en las preferencias del usuario de Odoo. Odoo solo la
-muestra al crearla; úsala en `Authorization: Bearer <API_KEY>`. La API key se
-valida con el modelo nativo `res.users.apikeys` y no se guarda en el log.
+muestra al crearla; envíala como `Authorization: Bearer <API_KEY>`. Se valida
+con `res.users.apikeys` y no se guarda en el log.
 
-Configura la URL destino del webhook en Parámetros del sistema:
+Configura la URL HTTPS destino del webhook en Parámetros del sistema:
 
 - Clave: `shop_api.webhook_url`
-- Valor: URL HTTPS de la tienda que recibirá el evento de entrega
+- Valor: URL de la tienda que recibirá el evento de entrega
 
 Si no se configura esa URL, no se encolan ni se envían webhooks.
 
@@ -49,23 +58,60 @@ curl -X POST "http://localhost:8073/api/v1/orders" \
 ```
 
 El pedido se crea como cotización y no se confirma automáticamente. Si se
-repite la misma clave con el mismo JSON, se devuelve la cotización original;
-si cambia el JSON, se responde `409`.
+repite la misma clave y contenido, se devuelve el pedido original; si cambia
+el contenido, se responde `409`.
 
-Los errores usan `{"error":{"code":"...","field":"...","message":"..."}}`.
+### Errores
+
+Los errores usan este formato:
+
+```json
+{
+  "error": {
+    "code": "PRODUCT_NOT_FOUND",
+    "field": "lines[1].default_code",
+    "message": "No existe un producto con el código ABC-123"
+  }
+}
+```
+
+| HTTP | Cuándo se devuelve |
+|---|---|
+| `400` | JSON inválido o falta `Idempotency-Key`. |
+| `401` | No se envía una API key válida. |
+| `409` | Se reutiliza una clave de idempotencia con contenido diferente. |
+| `422` | Un filtro, fecha, RIF, producto, cantidad u otro dato no es válido. |
+
 Cada solicitud, exitosa o fallida, registra endpoint, usuario si fue
-autenticado, código HTTP y duración.
+autenticado, código HTTP y duración. El registro no guarda la API key.
 
 Al validar una entrega de venta, Odoo encola un evento. Un cron lo envía sin
 bloquear la validación y reintenta hasta cinco veces después del envío inicial;
 la espera crece de 5 a 60 minutos. El evento tiene `event`,
 `external_reference`, `order` y `delivery`.
 
-## Pruebas
+## Cómo probar
 
-Desde la raíz del repositorio, ejecuta
-`./odoo test prueba-tecnica shop_integration_api`.
+Desde la raíz del repositorio:
 
-El nombre técnico cambió de `shop_api` a `shop_integration_api`. Para esta
-versión, usa una base nueva; una base donde estuviera instalado el nombre
-anterior requiere una migración aparte.
+```bash
+./odoo test prueba-tecnica shop_integration_api
+```
+
+La prueba conjunta de los cuatro módulos está en
+[`../README.md`](../README.md). El nombre técnico cambió de `shop_api` a
+`shop_integration_api`; una base con el módulo anterior requiere una migración
+de nombre aparte, por lo que las pruebas se ejecutan en una base nueva.
+
+## Supuestos y limitaciones
+
+- La API usa una API key global de un usuario de Odoo con permisos suficientes
+  para consultar productos y crear cotizaciones.
+- El RIF debe coincidir con el campo de identificación fiscal del contacto;
+  los productos se buscan por su referencia interna (`default_code`).
+- El pedido queda como cotización para que Ventas lo revise antes de
+  confirmarlo.
+- La URL destino del webhook se configura en `shop_api.webhook_url`. Si no se
+  configura, el módulo no envía avisos.
+- El cambio de nombre técnico no migra automáticamente instalaciones que aún
+  tengan `shop_api` instalado.
