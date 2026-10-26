@@ -4,6 +4,7 @@ from unittest.mock import patch
 import requests
 
 from odoo import fields
+from odoo.http import request as http_request
 from odoo.tests import HttpCase, tagged
 
 from ..controllers.api import ShopApiController
@@ -149,28 +150,46 @@ class TestShopApi(HttpCase):
             )
         )
 
-    def test_products_uses_one_stock_aggregation_for_many_products(self):
-        self.env["product.product"].create(
-            {
-                "name": "Second Shop API product",
-                "default_code": "SHOP-002",
-                "categ_id": self.category.id,
-                "list_price": 20.0,
-                "sale_ok": True,
-                "type": "consu",
-            }
-        )
+    def test_stock_aggregation_query_count_is_constant_as_products_grow(self):
         original = ShopApiController._available_quantities
+        query_counts = []
+
+        def count_queries(controller, products):
+            cursor = http_request.env.cr
+            before = cursor.sql_log_count
+            quantities = original(controller, products)
+            query_counts.append(cursor.sql_log_count - before)
+            return quantities
+
         with patch.object(
             ShopApiController,
             "_available_quantities",
-            autospec=True,
-            side_effect=original,
-        ) as aggregate:
+            autospec=True, side_effect=count_queries,
+        ):
             response = self._get_products(f"?category_id={self.category.id}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["total"], 2)
-        self.assertEqual(aggregate.call_count, 1)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()["total"], 1)
+
+            self.env["product.product"].create(
+                [
+                    {
+                        "name": f"Additional API product {index}",
+                        "default_code": f"SHOP-{index:03}",
+                        "categ_id": self.category.id,
+                        "list_price": 20.0,
+                        "sale_ok": True,
+                        "type": "product",
+                    }
+                    for index in range(2, 22)
+                ]
+            )
+            response = self._get_products(f"?category_id={self.category.id}")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()["total"], 21)
+
+        self.assertEqual(len(query_counts), 2)
+        self.assertGreater(query_counts[0], 0)
+        self.assertEqual(query_counts[0], query_counts[1])
 
     def test_order_errors_identify_the_invalid_field(self):
         payload = self._order_payload()
@@ -249,3 +268,59 @@ class TestShopApi(HttpCase):
         self.assertEqual(job.state, "pending")
         self.assertEqual(job.attempts, 1)
         self.assertTrue(job.next_retry_at > fields.Datetime.now())
+
+    def test_validating_sale_delivery_queues_webhook_without_waiting(self):
+        self.env["stock.quant"]._update_available_quantity(
+            self.product,
+            self.env.ref("stock.stock_location_stock"),
+            5,
+        )
+        self.env["ir.config_parameter"].sudo().set_param(
+            "shop_api.webhook_url",
+            "https://shop.example.invalid/webhook",
+        )
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner.id,
+                "client_order_ref": "WEB-DELIVERY-1",
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "product_uom_qty": 2,
+                        },
+                    )
+                ],
+            }
+        )
+        order.action_confirm()
+        picking = order.picking_ids.filtered(
+            lambda record: record.picking_type_code == "outgoing"
+        )
+        self.assertEqual(len(picking), 1)
+        picking.action_assign()
+        self.assertEqual(picking.state, "assigned")
+
+        with patch(
+            "odoo.addons.shop_integration_api.models.webhook.requests.post"
+        ) as post:
+            picking.button_validate()
+
+        self.assertEqual(picking.state, "done")
+        post.assert_not_called()
+        job = self.env["shop.api.webhook.job"].search(
+            [("picking_id", "=", picking.id)]
+        )
+        self.assertEqual(len(job), 1)
+        self.assertEqual(job.state, "pending")
+        self.assertEqual(
+            json.loads(job.payload),
+            {
+                "event": "delivery_validated",
+                "external_reference": "WEB-DELIVERY-1",
+                "order": order.name,
+                "delivery": picking.name,
+            },
+        )
