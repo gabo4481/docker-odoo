@@ -12,7 +12,9 @@ Permite solicitar, aprobar y registrar pagos a proveedores desde Odoo.
 - **C:** el pago convierte el monto a la moneda del diario según la tasa de la
   fecha de pago. Las solicitudes y los niveles se limitan por compañía; las
   transiciones usan bloqueo de filas para evitar acciones simultáneas y el
-  registro del pago y el cambio de estado comparten una transacción.
+  registro del pago y el cambio de estado comparten una transacción. Una
+  prueba con dos transacciones concurrentes verifica que solo una aprobación
+  puede cambiar el estado.
 
 ## Cómo probar
 

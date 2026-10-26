@@ -98,9 +98,10 @@ Desde la raíz del repositorio:
 ./odoo test prueba-tecnica shop_integration_api
 ```
 
-La prueba de stock compara el contador SQL al consultar 1 y 21 productos; la
-prueba de entrega confirma un pedido, valida su picking y verifica que el
-webhook se encole sin hacer una petición HTTP durante la validación.
+Las pruebas comparan el contador SQL de todo el GET al consultar 1 y 21
+productos; la prueba de entrega confirma un pedido, valida su picking y
+verifica que el webhook se encole sin hacer una petición HTTP durante la
+validación.
 
 La prueba conjunta de los cuatro módulos está en
 [`../README.md`](../README.md). El nombre técnico cambió de `shop_api` a

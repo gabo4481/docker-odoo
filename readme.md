@@ -1,4 +1,6 @@
-# Binaural Workspace — Multi-Instance Odoo Docker
+# PRUEBA TÉCNICA: SE UTILIZARÁ ODOO 17
+
+## Binaural Workspace — Multi-Instance Odoo Docker
 
 Entorno de desarrollo que permite levantar **múltiples instancias de Odoo** (diferentes versiones, diferentes proyectos) desde un único directorio, cada una con sus propios addons, base de datos y puerto. Todo se configura en un archivo `instances.json`.
 
