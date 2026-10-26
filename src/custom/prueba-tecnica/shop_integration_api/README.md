@@ -18,8 +18,8 @@ Actualiza la lista de aplicaciones e instala **Shop Integration API** en Odoo.
 El usuario de integración necesita permisos de ventas para crear cotizaciones.
 
 Genera una API key global en las preferencias del usuario de Odoo. Odoo solo la
-muestra al crearla; envíala como `Authorization: Bearer <API_KEY>`. Se valida
-con `res.users.apikeys` y no se guarda en el log.
+muestra al crearla; envíala en la cabecera `Authorization` con el esquema
+`Bearer`. Se valida con `res.users.apikeys` y no se guarda en el log.
 
 Configura la URL HTTPS destino del webhook en Parámetros del sistema:
 
@@ -35,7 +35,7 @@ La especificación completa está en [`openapi.yaml`](./openapi.yaml).
 ### Consultar productos
 
 ```bash
-curl -H "Authorization: Bearer <API_KEY>" \
+curl -H "Authorization: Bearer $API_KEY" \
   "http://localhost:8073/api/v1/products?category_id=1&only_with_stock=true&page=1&limit=50"
 ```
 
@@ -47,7 +47,7 @@ Filtros opcionales: `category_id`, `only_with_stock` (`true`/`false`) y
 
 ```bash
 curl -X POST "http://localhost:8073/api/v1/orders" \
-  -H "Authorization: Bearer <API_KEY>" \
+  -H "Authorization: Bearer $API_KEY" \
   -H "Idempotency-Key: shop-order-100" \
   -H "Content-Type: application/json" \
   -d '{
@@ -97,6 +97,10 @@ Desde la raíz del repositorio:
 ```bash
 ./odoo test prueba-tecnica shop_integration_api
 ```
+
+La prueba de stock compara el contador SQL al consultar 1 y 21 productos; la
+prueba de entrega confirma un pedido, valida su picking y verifica que el
+webhook se encole sin hacer una petición HTTP durante la validación.
 
 La prueba conjunta de los cuatro módulos está en
 [`../README.md`](../README.md). El nombre técnico cambió de `shop_api` a
