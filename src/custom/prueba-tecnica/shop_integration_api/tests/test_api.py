@@ -150,25 +150,39 @@ class TestShopApi(HttpCase):
             )
         )
 
-    def test_stock_aggregation_query_count_is_constant_as_products_grow(self):
-        original = ShopApiController._available_quantities
+    def test_products_query_count_does_not_grow_with_product_count(self):
+        original_authenticate = ShopApiController._authenticate
+        original_response = ShopApiController._response
+        query_starts = []
         query_counts = []
 
-        def count_queries(controller, products):
+        def capture_start(controller):
             cursor = http_request.env.cr
-            before = cursor.sql_log_count
-            quantities = original(controller, products)
-            query_counts.append(cursor.sql_log_count - before)
-            return quantities
+            query_starts.append(cursor.sql_log_count)
+            return original_authenticate(controller)
+
+        def capture_end(controller, status, payload):
+            cursor = http_request.env.cr
+            query_counts.append(cursor.sql_log_count - query_starts[-1])
+            response = original_response(controller, status, payload)
+            return response
 
         with patch.object(
             ShopApiController,
-            "_available_quantities",
-            autospec=True, side_effect=count_queries,
+            "_authenticate",
+            autospec=True,
+            side_effect=capture_start,
+        ), patch.object(
+            ShopApiController,
+            "_response",
+            autospec=True,
+            side_effect=capture_end,
         ):
             response = self._get_products(f"?category_id={self.category.id}")
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json()["total"], 1)
+            self._get_products(f"?category_id={self.category.id}")
+            one_product_query_count = query_counts[-1]
 
             self.env["product.product"].create(
                 [
@@ -186,10 +200,11 @@ class TestShopApi(HttpCase):
             response = self._get_products(f"?category_id={self.category.id}")
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json()["total"], 21)
+            self._get_products(f"?category_id={self.category.id}")
+            many_products_query_count = query_counts[-1]
 
-        self.assertEqual(len(query_counts), 2)
-        self.assertGreater(query_counts[0], 0)
-        self.assertEqual(query_counts[0], query_counts[1])
+        self.assertGreater(one_product_query_count, 0)
+        self.assertEqual(one_product_query_count, many_products_query_count)
 
     def test_order_errors_identify_the_invalid_field(self):
         payload = self._order_payload()

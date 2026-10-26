@@ -1,5 +1,9 @@
+import threading
 from unittest.mock import patch
 
+from psycopg2.errors import SerializationFailure
+
+from odoo import SUPERUSER_ID, api
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import TransactionCase, tagged
 
@@ -69,7 +73,7 @@ class TestPaymentRequest(TransactionCase):
                 "company_id": company.id,
                 "company_ids": [(6, 0, [company.id])],
             })
-        return cls.env["res.users"].create(values)
+        return cls.env["res.users"].with_context(no_reset_password=True).create(values)
 
     def _create_request(self, requester=None, amount=100):
         requester = requester or self.requester
@@ -160,6 +164,112 @@ class TestPaymentRequest(TransactionCase):
             request.with_user(other_approver).action_approve()
 
         self.assertEqual(request.state, "sent")
+
+    def test_concurrent_approvals_allow_only_one_transition(self):
+        registry = self.env.registry
+        with registry.cursor() as cr:
+            env = api.Environment(cr, SUPERUSER_ID, {})
+            approver_group = env.ref(
+                "payment_request.group_payment_request_approver"
+            )
+            approver_group_id = approver_group.id
+            approver = env.ref("base.user_admin")
+            cr.execute(
+                "INSERT INTO res_groups_users_rel (gid, uid) VALUES (%s, %s) "
+                "ON CONFLICT DO NOTHING",
+                [approver_group.id, approver.id],
+            )
+            partner = env["res.partner"].create(
+                {
+                    "name": "Concurrent payment supplier",
+                    "supplier_rank": 1,
+                }
+            )
+            env["payment.approval.level"].create(
+                {
+                    "name": "Concurrent payment approval level",
+                    "min_amount": 0,
+                    "currency_id": env.company.currency_id.id,
+                    "company_id": env.company.id,
+                    "approver_id": approver.id,
+                }
+            )
+            request = (
+                env["payment.request"]
+                .with_context(
+                    tracking_disable=True,
+                    mail_notrack=True,
+                    mail_create_nosubscribe=True,
+                )
+                .create(
+                    {
+                        "partner_id": partner.id,
+                        "amount": 100,
+                        "currency_id": env.company.currency_id.id,
+                        "date": "2026-01-15",
+                        "concept": "Concurrent approval test",
+                    }
+                )
+            )
+            request_id = request.id
+            approver_id = approver.id
+            cr.execute(
+                "UPDATE payment_request SET state = 'sent', approver_id = %s "
+                "WHERE id = %s",
+                [approver_id, request_id],
+            )
+            cr.commit()
+
+        start_together = threading.Barrier(2)
+        outcomes = []
+        outcomes_lock = threading.Lock()
+
+        def approve_request():
+            with registry.cursor() as cr:
+                try:
+                    env = api.Environment(cr, approver_id, {})
+                    request = env["payment.request"].browse(request_id)
+                    start_together.wait(timeout=10)
+                    request.with_context(tracking_disable=True).action_approve()
+                    cr.commit()
+                    outcome = ("approved", None)
+                except Exception as error:
+                    cr.rollback()
+                    outcome = ("failed", error)
+                with outcomes_lock:
+                    outcomes.append(outcome)
+
+        threads = [
+            threading.Thread(target=approve_request, daemon=True)
+            for _ in range(2)
+        ]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=30)
+
+        self.assertFalse(any(thread.is_alive() for thread in threads))
+        self.assertEqual(len(outcomes), 2)
+        self.assertEqual(
+            [status for status, _error in outcomes].count("approved"),
+            1,
+        )
+        self.assertEqual(
+            [status for status, _error in outcomes].count("failed"),
+            1,
+        )
+        failure = next(error for status, error in outcomes if status == "failed")
+        self.assertIsInstance(failure, SerializationFailure)
+        with registry.cursor() as cr:
+            env = api.Environment(cr, SUPERUSER_ID, {})
+            request = env["payment.request"].browse(request_id)
+            self.assertEqual(request.state, "approved")
+            self.assertEqual(request.approved_by_id.id, approver_id)
+            cr.execute(
+                "DELETE FROM res_groups_users_rel WHERE gid = %s AND uid = %s",
+                [approver_group_id, approver_id],
+            )
+            cr.commit()
 
     def test_requester_cannot_approve_by_direct_write(self):
         request = self._create_request()
