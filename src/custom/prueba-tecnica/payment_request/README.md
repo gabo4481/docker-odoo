@@ -16,6 +16,41 @@ Permite solicitar, aprobar y registrar pagos a proveedores desde Odoo.
   prueba con dos transacciones concurrentes verifica que solo una aprobación
   puede cambiar el estado.
 
+## Preparar usuarios y aprobación
+
+El botón **Enviar** aparece en una solicitud guardada en estado **Borrador**
+solo para usuarios que pertenezcan al grupo **Solicitante de pagos**. Para
+asignarlo en Odoo 17:
+
+1. Inicia sesión con un usuario administrador y abre **Ajustes → Usuarios y
+   compañías → Usuarios**.
+2. Abre el usuario que creará solicitudes y entra en **Permisos de acceso**.
+3. En la sección **Gestión de Pagos**, selecciona **Solicitante de pagos**.
+   Guarda los cambios. Si esa sección no aparece, verifica que el módulo
+   `payment_request` esté instalado y recarga el formulario de usuario.
+4. Cierra y vuelve a iniciar sesión con ese usuario. Crea y guarda una
+   solicitud; debe quedar en **Borrador** y mostrar el botón **Enviar**.
+
+Los grupos **Aprobador de pagos** y **Tesorería de pagos** también están en
+**Gestión de Pagos**. Los dos incluyen el acceso de solicitante. Asigna
+**Aprobador de pagos** a quien aprobará y **Tesorería de pagos** a quien
+registrará el pago; no asignes esos grupos a quien solo necesita solicitar.
+
+Antes de enviar, un administrador debe configurar al menos un nivel en
+**Gestión de Pagos → Configuración → Niveles de aprobación**. El nivel debe
+coincidir con la compañía y moneda de la solicitud, y su monto mínimo debe
+ser menor o igual al monto solicitado. Si hay varios niveles aplicables, se
+elige el de monto mínimo más alto que no exceda el monto. Sin coincidencia,
+el botón se seguirá viendo, pero al pulsarlo Odoo informará que falta el
+nivel; la configuración no es lo que oculta el botón.
+
+En el formulario, proveedor, monto, moneda, fecha y concepto se pueden
+completar o corregir mientras la solicitud está en **Borrador**. El
+solicitante se muestra como dato de solo lectura. El aprobador se muestra
+después de enviar; quién aprobó y cuándo aparecen al aprobar; el motivo solo
+aparece si se rechaza; y el pago aparece cuando Tesorería lo registra. Esos
+datos de seguimiento son de solo lectura y no se muestran vacíos al inicio.
+
 ## Cómo probar
 
 Desde la raíz del repositorio:
