@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="equipment_loan_view_tree" model="ir.ui.view">
+        <field name="name">equipment.loan.tree</field>
+        <field name="model">equipment.loan</field>
+        <field name="arch" type="xml">
+            <tree string="Préstamos de equipos">
+                <field name="equipment_id"/>
+                <field name="recipient_id"/>
+                <field name="delivery_date"/>
+                <field name="expected_return_date"/>
+                <field name="actual_return_date"/>
+                <field name="is_overdue"/>
+                <field name="state" widget="badge"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="equipment_loan_view_form" model="ir.ui.view">
+        <field name="name">equipment.loan.form</field>
+        <field name="model">equipment.loan</field>
+        <field name="arch" type="xml">
+            <form string="Préstamo de equipo">
+                <header>
+                    <button name="action_deliver" string="Entregar" type="object"
+                            class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_return" string="Devolver" type="object"
+                            class="oe_highlight" invisible="state != 'loaned'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,loaned,returned" readonly="1"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="equipment_id" required="1"
+                                   readonly="state != 'draft'"/>
+                            <field name="recipient_id" required="1"
+                                   readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="delivery_date" required="1"
+                                   readonly="state != 'draft'"/>
+                            <field name="expected_return_date" required="1"
+                                   readonly="state != 'draft'"/>
+                            <field name="actual_return_date" readonly="1"
+                                   invisible="not actual_return_date"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="equipment_loan_view_search" model="ir.ui.view">
+        <field name="name">equipment.loan.search</field>
+        <field name="model">equipment.loan</field>
+        <field name="arch" type="xml">
+            <search string="Préstamos de equipos">
+                <field name="equipment_id"/>
+                <field name="recipient_id"/>
+                <filter name="overdue" string="Vencidos"
+                        domain="[('state', '=', 'loaned'), ('expected_return_date', '&lt;', context_today().strftime('%Y-%m-%d'))]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter name="group_by_state" string="Estado"
+                            context="{'group_by': 'state'}"/>
+                    <filter name="group_by_equipment" string="Equipo"
+                            context="{'group_by': 'equipment_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="equipment_loan_action" model="ir.actions.act_window">
+        <field name="name">Préstamos de equipos</field>
+        <field name="res_model">equipment.loan</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="equipment_loan_view_search"/>
+    </record>
+
+    <menuitem id="equipment_loan_menu"
+              name="Préstamos de equipos"
+              parent="maintenance.menu_maintenance_title"
+              action="equipment_loan_action"
+              sequence="50"
+              groups="equipment_loan.group_equipment_loan_user"/>
+</odoo>
