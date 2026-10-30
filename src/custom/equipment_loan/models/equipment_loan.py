@@ -1,5 +1,6 @@
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
+from psycopg2 import IntegrityError
 
 
 class EquipmentLoan(models.Model):
@@ -26,9 +27,13 @@ class EquipmentLoan(models.Model):
     is_overdue = fields.Boolean(
         string="Overdue", compute="_compute_is_overdue"
     )
-    overdue_activity_created = fields.Boolean(
-        string="Overdue Activity Created", default=False, copy=False, readonly=True
-    )
+    def init(self):
+        # A Python constraint cannot serialize simultaneous deliveries; PostgreSQL enforces this atomically.
+        self.env.cr.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS equipment_loan_one_active_per_equipment_idx
+            ON equipment_loan (equipment_id)
+            WHERE state = 'loaned'
+        """)
 
     @api.depends("state", "expected_return_date")
     def _compute_is_overdue(self):
@@ -65,13 +70,25 @@ class EquipmentLoan(models.Model):
                 )
 
     def action_deliver(self):
+        if not self.env.user.has_group("equipment_loan.group_equipment_loan_manager"):
+            raise AccessError(_("Solo un gestor de préstamos puede entregar equipos."))
         for loan in self:
             if loan.state != "draft":
                 raise UserError(_("Solo se puede entregar un préstamo en borrador."))
-            loan.state = "loaned"
+            try:
+                with self.env.cr.savepoint():
+                    loan.state = "loaned"
+            except IntegrityError as error:
+                if error.diag.constraint_name != "equipment_loan_one_active_per_equipment_idx":
+                    raise
+                raise ValidationError(
+                    _("Este equipo ya tiene otro préstamo activo.")
+                ) from error
         return True
 
     def action_return(self):
+        if not self.env.user.has_group("equipment_loan.group_equipment_loan_manager"):
+            raise AccessError(_("Solo un gestor de préstamos puede devolver equipos."))
         for loan in self:
             if loan.state != "loaned":
                 raise UserError(_("Solo se puede devolver un préstamo activo."))
@@ -87,16 +104,48 @@ class EquipmentLoan(models.Model):
         overdue_loans = self.search([
             ("state", "=", "loaned"),
             ("expected_return_date", "<", today),
-            ("overdue_activity_created", "=", False),
         ])
+        if not overdue_loans:
+            return True
+
+        manager = self.env.ref("equipment_loan.group_equipment_loan_manager").users.filtered(
+            lambda user: user.active
+        ).sorted("id")[:1]
+        if not manager:
+            raise UserError(_("Asigna al menos un usuario al grupo «Gestor de préstamos»."))
+
+        activity_type = self.env.ref("mail.mail_activity_data_todo")
+        existing_activities = self.env["mail.activity"].search([
+            ("res_model_id", "=", self.env["ir.model"]._get_id("equipment.loan")),
+            ("res_id", "in", overdue_loans.ids),
+            ("activity_type_id", "=", activity_type.id),
+            ("summary", "=", _("Préstamo vencido")),
+        ])
+        loans_with_activity = set(existing_activities.mapped("res_id"))
         for loan in overdue_loans:
+            if loan.id in loans_with_activity:
+                continue
             loan.activity_schedule(
                 "mail.mail_activity_data_todo",
-                user_id=loan.recipient_id.id,
+                user_id=manager.id,
                 date_deadline=today,
                 summary=_("Préstamo vencido"),
                 note=_("El préstamo del equipo %s venció el %s.")
                 % (loan.equipment_id.display_name, loan.expected_return_date),
             )
-            loan.overdue_activity_created = True
         return True
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if not self.env.user.has_group("equipment_loan.group_equipment_loan_manager"):
+            if any(vals.get("state", "draft") != "draft" for vals in vals_list):
+                raise AccessError(_("Solo un gestor de préstamos puede cambiar el estado."))
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if (
+            "state" in vals
+            and not self.env.user.has_group("equipment_loan.group_equipment_loan_manager")
+        ):
+            raise AccessError(_("Solo un gestor de préstamos puede cambiar el estado."))
+        return super().write(vals)

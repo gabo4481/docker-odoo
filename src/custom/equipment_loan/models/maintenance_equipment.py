@@ -13,8 +13,16 @@ class MaintenanceEquipment(models.Model):
 
     @api.depends("equipment_loan_ids")
     def _compute_equipment_loan_count(self):
+        grouped_counts = self.env["equipment.loan"]._read_group(
+            [("equipment_id", "in", self.ids)],
+            ["equipment_id"],
+            ["__count"],
+        )
+        counts_by_equipment = {
+            equipment.id: count for equipment, count in grouped_counts
+        }
         for equipment in self:
-            equipment.equipment_loan_count = len(equipment.equipment_loan_ids)
+            equipment.equipment_loan_count = counts_by_equipment.get(equipment.id, 0)
 
     def action_view_equipment_loans(self):
         self.ensure_one()

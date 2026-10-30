@@ -9,8 +9,7 @@
                 <button name="action_view_equipment_loans"
                         type="object"
                         class="oe_stat_button"
-                        icon="fa-exchange"
-                        groups="equipment_loan.group_equipment_loan_user">
+                        icon="fa-exchange">
                     <field name="equipment_loan_count"
                            widget="statinfo"
                            string="Préstamos"/>

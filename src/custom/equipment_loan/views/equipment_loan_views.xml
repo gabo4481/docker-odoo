@@ -23,9 +23,11 @@
             <form string="Préstamo de equipo">
                 <header>
                     <button name="action_deliver" string="Entregar" type="object"
-                            class="oe_highlight" invisible="state != 'draft'"/>
+                            class="oe_highlight" invisible="state != 'draft'"
+                            groups="equipment_loan.group_equipment_loan_manager"/>
                     <button name="action_return" string="Devolver" type="object"
-                            class="oe_highlight" invisible="state != 'loaned'"/>
+                            class="oe_highlight" invisible="state != 'loaned'"
+                            groups="equipment_loan.group_equipment_loan_manager"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,loaned,returned" readonly="1"/>
                 </header>
@@ -82,5 +84,5 @@
               parent="maintenance.menu_maintenance_title"
               action="equipment_loan_action"
               sequence="50"
-              groups="equipment_loan.group_equipment_loan_user"/>
+              groups="base.group_user"/>
 </odoo>
